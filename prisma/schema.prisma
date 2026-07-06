@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Shop {
+  id        String   @id @default(cuid())
+  alias     String   @unique
+  name      String
+  address   String?
+  phone     String?
+  logoUrl   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  barbers      Barber[]
+  services     Service[]
+  products     Product[]
+  appointments Appointment[]
+  clients      Client[]
+  workingHours WorkingHours[]
+}
+
+model Barber {
+  id        String   @id @default(cuid())
+  shopId    String
+  name      String
+  email     String   @unique
+  password  String?
+  image     String?
+  role      String   @default("barber")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  shop               Shop              @relation(fields: [shopId], references: [id])
+  appointments       Appointment[]
+  workingHours       WorkingHours[]
+  serviceAssignments BarberService[]
+}
+
+model Service {
+  id              String   @id @default(cuid())
+  shopId          String
+  name            String
+  durationMinutes Int
+  price           Decimal
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  shop              Shop              @relation(fields: [shopId], references: [id])
+  appointments      Appointment[]
+  barberAssignments BarberService[]
+}
+
+model BarberService {
+  barberId  String
+  serviceId String
+
+  barber  Barber  @relation(fields: [barberId], references: [id])
+  service Service @relation(fields: [serviceId], references: [id])
+
+  @@id([barberId, serviceId])
+}
+
+model Product {
+  id        String   @id @default(cuid())
+  shopId    String
+  name      String
+  price     Decimal
+  imageUrl  String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  shop                Shop                  @relation(fields: [shopId], references: [id])
+  appointmentProducts AppointmentProduct[]
+}
+
+model WorkingHours {
+  id         String  @id @default(cuid())
+  shopId     String
+  barberId   String
+  dayOfWeek  Int
+  startTime  String
+  endTime    String
+  breakStart String?
+  breakEnd   String?
+
+  shop   Shop   @relation(fields: [shopId], references: [id])
+  barber Barber @relation(fields: [barberId], references: [id])
+
+  @@unique([barberId, dayOfWeek])
+}
+
+model Client {
+  id        String   @id @default(cuid())
+  shopId    String
+  name      String
+  phone     String
+  createdAt DateTime @default(now())
+
+  shop         Shop          @relation(fields: [shopId], references: [id])
+  appointments Appointment[]
+}
+
+model Appointment {
+  id           String   @id @default(cuid())
+  shopId       String
+  barberId     String
+  serviceId    String
+  clientId     String
+  date         DateTime
+  startTime    String
+  endTime      String
+  status       String   @default("confirmed")
+  observation  String?
+  totalPrice   Decimal?
+  reminderSent Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  shop     Shop     @relation(fields: [shopId], references: [id])
+  barber   Barber   @relation(fields: [barberId], references: [id])
+  service  Service  @relation(fields: [serviceId], references: [id])
+  client   Client   @relation(fields: [clientId], references: [id])
+  products AppointmentProduct[]
+
+  @@unique([barberId, date, startTime])
+}
+
+model AppointmentProduct {
+  appointmentId String
+  productId     String
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+  product     Product     @relation(fields: [productId], references: [id])
+
+  @@id([appointmentId, productId])
+}
