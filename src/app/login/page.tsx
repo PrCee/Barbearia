@@ -1,8 +1,8 @@
 "use client";
 
-import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { getTheme } from "@/lib/themes";
 
 const t = getTheme("noir");
@@ -19,21 +19,29 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
 
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
+    try {
+      const result = await signIn("credentials", {
+        email: email.trim(),
+        password,
+        redirect: false,
+      });
 
-    setLoading(false);
+      if (result?.error) {
+        setError("Email ou senha inválidos.");
+        setLoading(false);
+        return;
+      }
 
-    if (result?.error) {
-      setError("Email ou senha inválidos.");
-      return;
+      if (result?.ok) {
+        router.push("/dashboard");
+        router.refresh();
+      }
+    } catch (err) {
+      setError("Erro de conexão. Tente novamente.");
+      console.error("Login error:", err);
+    } finally {
+      setLoading(false);
     }
-
-    router.push("/dashboard");
-    router.refresh();
   }
 
   return (
@@ -57,6 +65,7 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               className={`w-full p-4 rounded-2xl border text-sm transition-all duration-200 ${t.surface} ${t.border} ${t.text} focus:outline-none focus:ring-2 focus:ring-offset-0 ${t.borderFocus}`}
               placeholder="seu@email.com"
+              autoComplete="email"
             />
           </div>
           <div>
@@ -68,11 +77,12 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               className={`w-full p-4 rounded-2xl border text-sm transition-all duration-200 ${t.surface} ${t.border} ${t.text} focus:outline-none focus:ring-2 focus:ring-offset-0 ${t.borderFocus}`}
               placeholder="••••••••"
+              autoComplete="current-password"
             />
           </div>
 
           {error && (
-            <p className="text-red-400 text-sm text-center bg-red-400/10 py-2 rounded-lg">{error}</p>
+            <p className="text-red-400 text-sm text-center bg-red-400/10 py-3 rounded-xl">{error}</p>
           )}
 
           <button
