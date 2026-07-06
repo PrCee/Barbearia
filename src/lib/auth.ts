@@ -14,10 +14,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: "Senha", type: "password" },
       },
       async authorize(credentials) {
+        try {
         const email = credentials?.email as string | undefined;
         const password = credentials?.password as string | undefined;
-        if (!email || !password) return null;
+        if (!email || !password) { console.error("[auth] credenciais vazias"); return null; }
 
+        console.log("[auth] buscando barber:", email);
         const prisma = getPrisma();
         const barber = await prisma.barber.findUnique({
           where: { email },
@@ -31,12 +33,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             active: true,
           },
         });
+        console.log("[auth] barber encontrado:", !!barber);
 
-        if (!barber?.active || !barber.password) return null;
+        if (!barber?.active || !barber.password) { console.error("[auth] barber inativo ou sem senha"); return null; }
 
         const valid = await compare(password, barber.password);
+        console.log("[auth] senha válida:", valid);
         if (!valid) return null;
 
+        console.log("[auth] login ok:", barber.email);
         return {
           id: barber.id,
           name: barber.name,
@@ -44,6 +49,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           role: barber.role,
           shopId: barber.shopId,
         };
+        } catch (err) {
+          console.error("[auth] erro:", err);
+          return null;
+        }
       },
     }),
   ],
