@@ -145,27 +145,27 @@ export default function LandingClient({
             </div>
             
             <div className="space-y-4 text-[14px]">
-              <div className="flex justify-between items-center border-b border-white/5 pb-2">
+              <div className={`flex justify-between items-center border-b pb-2 ${theme.border}`}>
                 <span className={theme.textMuted}>Domingo</span>
                 <span className="italic opacity-70">Fechado</span>
               </div>
-              <div className="flex justify-between items-center border-b border-white/5 pb-2">
+              <div className={`flex justify-between items-center border-b pb-2 ${theme.border}`}>
                 <span className={theme.textMuted}>Segunda-feira</span>
                 <span className="font-medium">18:30 - 21:30</span>
               </div>
-              <div className={`flex justify-between items-center border-b border-white/5 pb-2 font-bold ${theme.primaryText}`}>
+              <div className={`flex justify-between items-center border-b pb-2 font-bold ${theme.text} ${theme.border}`}>
                 <span>Terça-feira</span>
                 <span>18:30 - 21:30</span>
               </div>
-              <div className="flex justify-between items-center border-b border-white/5 pb-2">
+              <div className={`flex justify-between items-center border-b pb-2 ${theme.border}`}>
                 <span className={theme.textMuted}>Quarta-feira</span>
                 <span className="font-medium">18:30 - 21:30</span>
               </div>
-              <div className="flex justify-between items-center border-b border-white/5 pb-2">
+              <div className={`flex justify-between items-center border-b pb-2 ${theme.border}`}>
                 <span className={theme.textMuted}>Quinta-feira</span>
                 <span className="font-medium">18:30 - 21:30</span>
               </div>
-              <div className="flex justify-between items-center border-b border-white/5 pb-2">
+              <div className={`flex justify-between items-center border-b pb-2 ${theme.border}`}>
                 <span className={theme.textMuted}>Sexta-feira</span>
                 <span className="font-medium">18:30 - 21:30</span>
               </div>
