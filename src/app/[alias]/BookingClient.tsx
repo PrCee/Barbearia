@@ -1,18 +1,5 @@
 "use client";
 
-// ---------------------------------------------------------------------------
-// BookingClient — componente cliente do fluxo de agendamento
-//
-// Recebe dados da shop do Server Component (page.tsx) e gerencia
-// o fluxo em 3 passos:
-//   1. Escolha de profissional, serviço e data
-//   2. Escolha de horário (busca em tempo real via /api/public/slots)
-//   3. Confirmação com nome e WhatsApp
-//
-// Separado em arquivo próprio para manter page.tsx como Server Component puro,
-// seguindo as regras de arquitetura do projeto (arquivos curtos e focados).
-// ---------------------------------------------------------------------------
-
 import { useState } from "react";
 import type { ThemeConfig } from "@/lib/themes";
 import type { Professional, ServiceItem, ShopPublicData } from "./page";
@@ -21,14 +8,12 @@ import type { Professional, ServiceItem, ShopPublicData } from "./page";
 // Tipos locais
 // ---------------------------------------------------------------------------
 
-// Slot retornado pela API pública — apenas horário e disponibilidade
 interface PublicSlot {
   time: string;
   endTime: string;
   available: boolean;
 }
 
-// Resposta da API de criação de agendamento
 interface CreatedAppointmentResponse {
   id: string;
   startTime: string;
@@ -37,17 +22,133 @@ interface CreatedAppointmentResponse {
 }
 
 // ---------------------------------------------------------------------------
-// Helper: concatena classes condicionalmente (sem dependência externa)
+// Helper: concatena classes condicionalmente
 // ---------------------------------------------------------------------------
-
 function cn(...classes: (string | false | undefined | null)[]): string {
   return classes.filter(Boolean).join(" ");
 }
 
 // ---------------------------------------------------------------------------
+// Componente de Calendário Mensal Nativo (React)
+// ---------------------------------------------------------------------------
+function MonthlyCalendar({
+  selectedDate,
+  onChange,
+  minDate,
+  theme,
+}: {
+  selectedDate: string;
+  onChange: (d: string) => void;
+  minDate: string;
+  theme: ThemeConfig;
+}) {
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const d = selectedDate ? new Date(selectedDate + "T12:00:00") : new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
+
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayOfWeek = new Date(year, month, 1).getDay(); // 0 = Sunday
+
+  const days = [];
+  for (let i = 0; i < firstDayOfWeek; i++) {
+    days.push(null);
+  }
+  for (let i = 1; i <= daysInMonth; i++) {
+    days.push(new Date(year, month, i));
+  }
+
+  const handlePrevMonth = () => {
+    setCurrentMonth(new Date(year, month - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentMonth(new Date(year, month + 1, 1));
+  };
+
+  const isBeforeMinDate = (date: Date) => {
+    const dStr = date.toISOString().split("T")[0];
+    return dStr < minDate;
+  };
+
+  const isSelected = (date: Date) => {
+    const dStr = date.toISOString().split("T")[0];
+    return dStr === selectedDate;
+  };
+
+  const monthNames = [
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+  ];
+  const weekDays = ["D", "S", "T", "Q", "Q", "S", "S"];
+
+  return (
+    <div className={cn("w-full max-w-sm mx-auto p-4 rounded-3xl border shadow-sm", theme.surface, theme.border)}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4 px-2">
+        <button
+          onClick={handlePrevMonth}
+          className={cn("w-8 h-8 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors")}
+        >
+          &larr;
+        </button>
+        <div className="font-semibold text-[15px]">
+          {monthNames[month]} {year}
+        </div>
+        <button
+          onClick={handleNextMonth}
+          className={cn("w-8 h-8 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors")}
+        >
+          &rarr;
+        </button>
+      </div>
+
+      {/* Week days */}
+      <div className="grid grid-cols-7 mb-2">
+        {weekDays.map((wd, i) => (
+          <div key={i} className={cn("text-center text-[11px] font-semibold tracking-widest", theme.textMuted)}>
+            {wd}
+          </div>
+        ))}
+      </div>
+
+      {/* Days grid */}
+      <div className="grid grid-cols-7 gap-y-2 gap-x-1">
+        {days.map((date, i) => {
+          if (!date) {
+            return <div key={`empty-${i}`} className="h-10" />;
+          }
+          
+          const disabled = isBeforeMinDate(date);
+          const selected = isSelected(date);
+          
+          return (
+            <button
+              key={i}
+              disabled={disabled}
+              onClick={() => onChange(date.toISOString().split("T")[0])}
+              className={cn(
+                "h-10 w-full flex items-center justify-center rounded-full text-[15px] font-medium transition-all duration-200",
+                disabled ? cn("opacity-30 cursor-not-allowed") : "",
+                !disabled && !selected ? "hover:bg-black/5 dark:hover:bg-white/5 active:scale-95" : "",
+                selected ? cn(theme.primary, theme.primaryText, "shadow-md scale-105") : ""
+              )}
+            >
+              {date.getDate()}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Componente principal
 // ---------------------------------------------------------------------------
-
 export default function BookingClient({
   shop,
   theme,
@@ -72,7 +173,6 @@ export default function BookingClient({
 
   const today = new Date().toISOString().split("T")[0];
 
-  // Animação suave entre passos
   const goTo = (s: number) => {
     setTransition(true);
     setTimeout(() => {
@@ -81,7 +181,6 @@ export default function BookingClient({
     }, 150);
   };
 
-  // Envia o agendamento para a API real e salva no banco
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientName || !clientPhone || !selectedPro || !selectedService || !selectedSlot) return;
@@ -107,10 +206,9 @@ export default function BookingClient({
       const data: CreatedAppointmentResponse & { error?: string; type?: string } = await res.json();
 
       if (!res.ok) {
-        // Se conflito de concorrência, volta para a tela de slots para o cliente escolher outro
         if (data.type === "CONCURRENCY_CONFLICT") {
           setSubmitError(data.error ?? "Este horário acabou de ser reservado. Escolha outro.");
-          goTo(2);
+          goTo(2); // Volta para slots
           return;
         }
         setSubmitError(data.error ?? "Erro ao criar agendamento. Tente novamente.");
@@ -126,92 +224,72 @@ export default function BookingClient({
     }
   };
 
-  // ---- Tela de sucesso ----
   if (submitted) {
     return (
-      <div className={cn("min-h-screen flex items-center justify-center p-6", theme.bg, theme.text)}>
+      <div className={cn("min-h-screen flex items-center justify-center p-6 font-sans", theme.bg, theme.text)}>
         <div className="text-center max-w-sm w-full animate-in fade-in zoom-in duration-500">
-          <div className={cn("w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center text-3xl", theme.surface, "ring-2 ring-green-500/20")}>
+          <div className={cn("w-20 h-20 rounded-[24px] mx-auto mb-6 flex items-center justify-center text-3xl shadow-sm border", theme.surface, theme.border)}>
             ✅
           </div>
-          <h2 className="text-2xl font-bold mb-2 tracking-tight">Agendado com Sucesso</h2>
-          <p className={cn("mb-6", theme.textMuted)}>Obrigado por agendar conosco!</p>
+          <h2 className="text-2xl font-semibold mb-2 tracking-tight">Agendado!</h2>
+          <p className={cn("mb-8 text-[15px]", theme.textMuted)}>Sua vaga está garantida.</p>
 
-          <div className={cn("rounded-2xl p-5 text-left space-y-3 mb-6 border", theme.surface, theme.border)}>
+          <div className={cn("rounded-[24px] p-6 text-left space-y-4 mb-8 border shadow-sm", theme.surface, theme.border)}>
             <ResumeLine label="Profissional" value={selectedPro?.name ?? ""} t={theme} />
             <ResumeLine label="Serviço" value={selectedService?.name ?? ""} t={theme} />
             <ResumeLine label="Dia" value={formatDate(selectedDate)} t={theme} />
             <ResumeLine label="Hora" value={selectedSlot?.time ?? ""} t={theme} />
-            <div className={cn("pt-3 mt-3 border-t", theme.border)}>
+            <div className={cn("pt-4 mt-4 border-t", theme.border)}>
               <ResumeLine label="Total" value={`R$ ${selectedService?.price.toFixed(2)}`} t={theme} bold />
             </div>
           </div>
 
-          {/* Link de cancelamento — permite o cliente cancelar sem login */}
           {cancelToken && (
-            <p className={cn("text-xs mb-6", theme.textMuted)}>
+            <p className={cn("text-[13px] mb-8", theme.textMuted)}>
               Precisa cancelar?{" "}
-              <a
-                href={`/cancelar/${cancelToken}`}
-                className="underline underline-offset-2 hover:opacity-80"
-              >
-                Clique aqui para cancelar este agendamento
+              <a href={`/cancelar/${cancelToken}`} className="underline underline-offset-4 hover:text-red-400">
+                Clique aqui
               </a>
             </p>
           )}
 
-          <div className="space-y-3">
-            <button
-              onClick={() => {
-                setStep(1); setSubmitted(false); setSelectedPro(null);
-                setSelectedService(null); setSelectedDate(""); setSelectedSlot(null);
-                setClientName(""); setClientPhone(""); setCancelToken(null);
-              }}
-              className={cn("w-full py-3.5 rounded-xl font-medium transition-all duration-200 border", theme.surface, theme.surfaceAlt, theme.border, theme.text)}
-            >
-              Novo Agendamento
-            </button>
-            {onClose && (
-               <button
-                 onClick={onClose}
-                 className={`w-full py-3.5 rounded-xl text-sm font-bold transition-all ${theme.primary} ${theme.primaryHover} ${theme.primaryText}`}
-               >
-                 Voltar para o Início
-               </button>
-            )}
-          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className={cn("w-full py-4 rounded-[20px] font-semibold text-[15px] transition-all duration-200 border", theme.surface, theme.border, "hover:bg-black/5 dark:hover:bg-white/5")}
+          >
+            Fazer outro agendamento
+          </button>
         </div>
       </div>
     );
   }
 
-  // ---- Fluxo de agendamento ----
   return (
-    <div className={cn("min-h-screen flex flex-col", theme.bg, theme.text)}>
-      {/* Botão de Fechar no Topo (Mobile Modal Style) */}
+    <div className={cn("min-h-screen flex flex-col font-sans", theme.bg, theme.text)}>
+      {/* Botão de Fechar no Topo */}
       {onClose && (
         <div className="flex justify-end p-4">
           <button 
             onClick={onClose}
-            className={`w-10 h-10 flex items-center justify-center rounded-full bg-black/20 hover:bg-black/40 transition-colors backdrop-blur-md border ${theme.border}`}
+            className={`w-9 h-9 flex items-center justify-center rounded-full bg-black/10 dark:bg-white/10 hover:bg-black/20 dark:hover:bg-white/20 transition-colors backdrop-blur-md`}
           >
             ✕
           </button>
         </div>
       )}
 
-      {/* Indicador de passos */}
-      <div className="px-6 pt-2">
-        <div className={cn("rounded-2xl border p-1 flex gap-1", theme.surface, theme.border)}>
+      {/* Indicador de passos Minimalista */}
+      <div className="px-6 pt-2 mb-6">
+        <div className={cn("rounded-full border p-1 flex gap-1", theme.surface, theme.border)}>
           {["Profissional", "Horário", "Confirmar"].map((label, i) => (
             <div
               key={i}
               className={cn(
-                "flex-1 text-center py-2 rounded-xl text-xs font-medium transition-all duration-300",
+                "flex-1 text-center py-2 rounded-full text-[13px] font-semibold transition-all duration-300",
                 step > i + 1
                   ? cn(theme.primary, theme.primaryText)
                   : step === i + 1
-                  ? cn(theme.surfaceAlt, theme.text, "shadow-sm")
+                  ? cn(theme.bg, theme.text, "shadow-sm border border-black/5 dark:border-white/5")
                   : cn(theme.textMuted)
               )}
             >
@@ -222,7 +300,7 @@ export default function BookingClient({
       </div>
 
       {/* Conteúdo do passo atual */}
-      <div className={cn("px-6 pb-24 max-w-md mx-auto transition-opacity duration-150", transition && "opacity-0")}>
+      <div className={cn("px-6 pb-24 max-w-md w-full mx-auto transition-opacity duration-200", transition && "opacity-0")}>
         {step === 1 && (
           <StepProfessionals
             shop={shop}
@@ -231,28 +309,26 @@ export default function BookingClient({
             setSelectedPro={setSelectedPro}
             selectedService={selectedService}
             setSelectedService={setSelectedService}
-            selectedDate={selectedDate}
-            setSelectedDate={setSelectedDate}
-            today={today}
             onNext={() => goTo(2)}
           />
         )}
         {step === 2 && (
-          <StepTimeSlots
+          <StepDateTime
             theme={theme}
             selectedPro={selectedPro!}
             selectedService={selectedService!}
             shopAlias={shop.alias}
             selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
             selectedSlot={selectedSlot}
             setSelectedSlot={setSelectedSlot}
+            today={today}
             onNext={() => goTo(3)}
             onBack={() => goTo(1)}
           />
         )}
         {step === 3 && (
           <StepConfirm
-            shop={shop}
             theme={theme}
             selectedPro={selectedPro!}
             selectedService={selectedService!}
@@ -263,125 +339,90 @@ export default function BookingClient({
             clientPhone={clientPhone}
             setClientPhone={setClientPhone}
             onSubmit={handleSubmit}
-            onBack={() => goTo(2)}
             submitting={submitting}
             submitError={submitError}
+            onBack={() => goTo(2)}
           />
         )}
       </div>
-
-      {/* Botão flutuante de WhatsApp — contato direto com a barbearia */}
-      {shop.phone && (
-        <a
-          href={`https://wa.me/${shop.phone.replace(/\D/g, "")}?text=${encodeURIComponent("Olá! Gostaria de mais informações sobre agendamentos.")}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Falar no WhatsApp"
-          className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center shadow-lg shadow-green-900/40 transition-all duration-200 hover:scale-110 active:scale-95"
-        >
-          <svg viewBox="0 0 24 24" fill="white" className="w-7 h-7">
-            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-          </svg>
-        </a>
-      )}
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Step 1: Profissional + Serviço + Data
+// Passo 1: Escolha do Profissional e Serviço
 // ---------------------------------------------------------------------------
-
-// Professional agora inclui campo opcional de imagem
 function StepProfessionals({
-  shop, theme, selectedPro, setSelectedPro, selectedService, setSelectedService,
-  selectedDate, setSelectedDate, today, onNext,
+  shop, theme,
+  selectedPro, setSelectedPro,
+  selectedService, setSelectedService,
+  onNext
 }: {
   shop: ShopPublicData; theme: ThemeConfig;
   selectedPro: Professional | null; setSelectedPro: (p: Professional) => void;
   selectedService: ServiceItem | null; setSelectedService: (s: ServiceItem) => void;
-  selectedDate: string; setSelectedDate: (d: string) => void;
-  today: string; onNext: () => void;
+  onNext: () => void;
 }) {
   return (
-    <div className="space-y-6 pt-6">
-      {/* Seleção de profissional */}
-      <Section title="Escolha o profissional" theme={theme}>
-        <div className="grid grid-cols-2 gap-3">
+    <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
+      
+      <Section title="Escolha o Profissional" theme={theme}>
+        <div className="grid grid-cols-3 gap-3">
           {shop.professionals.map((pro) => (
             <button
               key={pro.id}
-              onClick={() => setSelectedPro(pro)}
+              onClick={() => {
+                setSelectedPro(pro);
+                // Reseta próximos passos caso o usuário mude
+                setSelectedService(null as any); 
+              }}
               className={cn(
-                "p-4 rounded-2xl border text-center transition-all duration-200",
+                "flex flex-col items-center p-3 rounded-[20px] border transition-all duration-200",
                 selectedPro?.id === pro.id
-                  ? cn(theme.primary, "border-transparent shadow-lg scale-[1.02]")
-                  : cn(theme.surface, theme.border, theme.surfaceAlt)
+                  ? cn(theme.primary, theme.primaryText, "shadow-md scale-105")
+                  : cn(theme.surface, theme.border, "hover:bg-black/5 dark:hover:bg-white/5 active:scale-95")
               )}
             >
-              {/* Foto do barbeiro — exibe imagem se disponível, inicial do nome como fallback */}
-              <div className={cn("w-14 h-14 rounded-xl mx-auto mb-2 overflow-hidden flex items-center justify-center text-lg font-bold", theme.bg, theme.textSecondary)}>
-                {pro.image ? (
-                  <img src={pro.image} alt={pro.name} className="w-full h-full object-cover" />
-                ) : (
-                  pro.name[0]
-                )}
+              <div className="w-12 h-12 rounded-full mb-2 overflow-hidden flex items-center justify-center text-lg font-bold bg-white/20">
+                {pro.image ? <img src={pro.image} alt={pro.name} className="w-full h-full object-cover" /> : pro.name[0]}
               </div>
-              <p className="text-sm font-medium">{pro.name}</p>
+              <span className="text-[13px] font-semibold truncate w-full">{pro.name}</span>
             </button>
           ))}
         </div>
       </Section>
 
-      {/* Seleção de serviço — aparece após escolher o profissional */}
       {selectedPro && (
-        <Section title="Escolha o serviço" theme={theme}>
-          <div className="space-y-2">
+        <Section title="Qual serviço?" theme={theme}>
+          <div className="space-y-3">
             {shop.services.map((svc) => (
               <button
                 key={svc.id}
                 onClick={() => setSelectedService(svc)}
                 className={cn(
-                  "w-full p-4 rounded-2xl border text-left flex justify-between items-center transition-all duration-200",
+                  "w-full flex items-center justify-between p-5 rounded-[24px] border text-left transition-all duration-200",
                   selectedService?.id === svc.id
-                    ? cn(theme.primary, "border-transparent shadow-lg")
-                    : cn(theme.surface, theme.border, theme.surfaceAlt)
+                    ? cn(theme.primary, theme.primaryText, "shadow-md scale-[1.02]")
+                    : cn(theme.surface, theme.border, "hover:bg-black/5 dark:hover:bg-white/5 active:scale-[0.98]")
                 )}
               >
                 <div>
-                  <p className="font-medium text-sm">{svc.name}</p>
-                  <p className={cn("text-xs mt-0.5", theme.textMuted)}>{svc.durationMinutes} min</p>
+                  <p className="font-semibold text-[15px]">{svc.name}</p>
+                  <p className={cn("text-[13px] mt-1 opacity-80")}>{svc.durationMinutes} min</p>
                 </div>
-                <span className={cn("font-bold text-sm", theme.accent)}>R$ {svc.price.toFixed(2)}</span>
+                <span className={cn("font-bold text-[16px]")}>R$ {svc.price.toFixed(2)}</span>
               </button>
             ))}
           </div>
         </Section>
       )}
 
-      {/* Seleção de data — aparece após escolher o serviço */}
       {selectedService && (
-        <Section title="Escolha o dia" theme={theme}>
-          <input
-            type="date"
-            value={selectedDate}
-            min={today}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className={cn(
-              "w-full p-4 rounded-2xl border transition-all duration-200 [color-scheme:dark] font-medium text-sm",
-              theme.surface, theme.border, theme.text, theme.borderFocus,
-              "focus:outline-none focus:ring-2 focus:ring-offset-0"
-            )}
-          />
-        </Section>
-      )}
-
-      {selectedDate && (
         <button
           onClick={onNext}
-          className={cn("w-full py-4 rounded-2xl font-bold text-sm transition-all duration-200 shadow-lg active:scale-[0.98]", theme.primary, theme.primaryHover, theme.primaryText)}
+          className={cn("w-full py-4 rounded-[20px] font-semibold text-[16px] transition-all shadow-sm active:scale-[0.98]", theme.primary, theme.primaryText)}
         >
-          Avançar →
+          Continuar
         </button>
       )}
     </div>
@@ -389,165 +430,117 @@ function StepProfessionals({
 }
 
 // ---------------------------------------------------------------------------
-// Step 2: Horários disponíveis (busca em tempo real)
-//
-// Ao montar este componente, dispara um fetch para /api/public/slots.
-// O cliente vê:
-//   - Slots livres: botão normal, clicável
-//   - Slots ocupados: botão desabilitado, visual diferente (sem revelar quem agendou)
-//   - Loading: spinner enquanto busca
-//   - Erro: mensagem amigável com botão de retry
+// Passo 2: Calendário e Horários
 // ---------------------------------------------------------------------------
-
-function StepTimeSlots({
+function StepDateTime({
   theme, selectedPro, selectedService, shopAlias,
-  selectedDate, selectedSlot, setSelectedSlot, onNext, onBack,
+  selectedDate, setSelectedDate,
+  selectedSlot, setSelectedSlot,
+  today, onNext, onBack,
 }: {
   theme: ThemeConfig; selectedPro: Professional; selectedService: ServiceItem;
-  shopAlias: string; selectedDate: string;
+  shopAlias: string; selectedDate: string; setSelectedDate: (d: string) => void;
   selectedSlot: PublicSlot | null; setSelectedSlot: (s: PublicSlot) => void;
-  onNext: () => void; onBack: () => void;
+  today: string; onNext: () => void; onBack: () => void;
 }) {
   const [slots, setSlots] = useState<PublicSlot[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState(false);
 
-  // Busca slots ao montar (ou ao clicar em retry)
-  // Separado em função para permitir retry sem remover o componente
-  const fetchSlots = async () => {
+  const fetchSlotsForDate = async (date: string) => {
+    setSelectedDate(date);
+    setSelectedSlot(null as any);
     setLoading(true);
     setFetchError(null);
 
     try {
-      // A API pública não requer autenticação — retorna apenas disponibilidade
       const params = new URLSearchParams({
         shopAlias,
         barberId: selectedPro.id,
         serviceId: selectedService.id,
-        date: selectedDate,
+        date: date,
       });
 
       const res = await fetch(`/api/public/slots?${params}`);
+      if (!res.ok) throw new Error("Erro na busca");
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setFetchError(data.error ?? "Erro ao carregar horários.");
-        return;
-      }
-
-      const data: PublicSlot[] = await res.json();
-      setSlots(data);
+      const data = await res.json();
+      setSlots(data.slots || []);
     } catch {
-      setFetchError("Sem conexão. Verifique sua internet e tente novamente.");
+      setFetchError("Não foi possível carregar os horários.");
     } finally {
       setLoading(false);
-      setLoaded(true);
     }
   };
 
-  // Carrega ao montar o componente (quando o usuário chega no passo 2)
-  if (!loaded && !loading && !fetchError) {
-    fetchSlots();
-  }
-
-  const availableCount = slots.filter((s) => s.available).length;
-
   return (
-    <div className="space-y-6 pt-6">
-      {/* Cabeçalho do passo */}
-      <div className="flex items-center gap-2">
-        <h3 className={cn("text-sm font-medium", theme.textMuted)}>
-          {formatDate(selectedDate)} · {selectedPro.name}
-        </h3>
-        <span className={cn("text-xs py-0.5 px-2 rounded-full", theme.surface, theme.border, theme.textMuted)}>
-          {selectedService.durationMinutes}min
-        </span>
-      </div>
+    <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
+      <Section title="Escolha a Data" theme={theme}>
+        <MonthlyCalendar 
+          selectedDate={selectedDate}
+          onChange={fetchSlotsForDate}
+          minDate={today}
+          theme={theme}
+        />
+      </Section>
 
-      {/* Estado: carregando */}
-      {loading && (
-        <div className={cn("text-center py-12 rounded-2xl border", theme.surface, theme.border)}>
-          <div className="animate-spin w-8 h-8 border-2 border-current border-t-transparent rounded-full mx-auto mb-3 opacity-50" />
-          <p className={theme.textMuted}>Verificando disponibilidade...</p>
-        </div>
-      )}
-
-      {/* Estado: erro com retry */}
-      {fetchError && !loading && (
-        <div className={cn("text-center py-10 rounded-2xl border", theme.surface, theme.border)}>
-          <p className={cn("mb-4", theme.textMuted)}>{fetchError}</p>
-          <button
-            onClick={fetchSlots}
-            className={cn("px-6 py-2.5 rounded-xl text-sm font-medium border transition-all duration-200", theme.surface, theme.border, theme.surfaceAlt)}
-          >
-            Tentar novamente
-          </button>
-        </div>
-      )}
-
-      {/* Estado: sem horários disponíveis */}
-      {loaded && !loading && !fetchError && availableCount === 0 && slots.length === 0 && (
-        <div className={cn("text-center py-12 rounded-2xl border", theme.surface, theme.border)}>
-          <p className={theme.textMuted}>Nenhum horário disponível nesta data.</p>
-        </div>
-      )}
-
-      {/* Lista de slots: livres e ocupados */}
-      {loaded && !loading && !fetchError && slots.length > 0 && (
-        <>
-          {/* Legenda visual */}
-          <div className="flex items-center gap-4 text-xs">
-            <span className={cn("flex items-center gap-1.5", theme.textMuted)}>
-              <span className={cn("w-3 h-3 rounded-sm inline-block", theme.surfaceAlt)} />
-              Disponível ({availableCount})
-            </span>
-            <span className={cn("flex items-center gap-1.5 opacity-50", theme.textMuted)}>
-              <span className="w-3 h-3 rounded-sm inline-block bg-current opacity-30" />
-              Ocupado ({slots.length - availableCount})
-            </span>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2">
-            {slots.map((slot) => (
-              <button
-                key={slot.time}
-                onClick={() => slot.available && setSelectedSlot(slot)}
-                disabled={!slot.available}
-                title={slot.available ? `Disponível: ${slot.time}` : "Horário ocupado"}
-                className={cn(
-                  "p-4 rounded-xl border text-center text-sm font-medium transition-all duration-200",
-                  // Slot selecionado
-                  selectedSlot?.time === slot.time && slot.available
-                    ? cn(theme.primary, "border-transparent shadow-lg scale-[1.02]", theme.primaryText)
-                    // Slot disponível (não selecionado)
-                    : slot.available
-                    ? cn(theme.surface, theme.border, theme.surfaceAlt)
-                    // Slot ocupado: desabilitado com visual claro para o cliente
-                    : "opacity-40 cursor-not-allowed line-through bg-transparent border-dashed"
-                )}
-              >
-                {slot.time}
+      {selectedDate && (
+        <Section title="Horários Livres" theme={theme}>
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <div className="w-8 h-8 border-4 border-t-transparent border-black/20 dark:border-white/20 rounded-full animate-spin" />
+            </div>
+          ) : fetchError ? (
+            <div className={cn("p-6 text-center rounded-[24px] border", theme.surface, theme.border)}>
+              <p className="text-sm text-red-500 mb-4">{fetchError}</p>
+              <button onClick={() => fetchSlotsForDate(selectedDate)} className={cn("px-4 py-2 rounded-full text-sm", theme.bg, theme.text, theme.border, "border")}>
+                Tentar novamente
               </button>
-            ))}
-          </div>
-        </>
+            </div>
+          ) : slots.length === 0 ? (
+            <div className={cn("p-6 text-center rounded-[24px] border", theme.surface, theme.border)}>
+              <p className={cn("text-[14px]", theme.textMuted)}>Nenhum horário livre neste dia.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-4 gap-3">
+              {slots.map((slot) => {
+                const isSelected = selectedSlot?.time === slot.time;
+                return (
+                  <button
+                    key={slot.time}
+                    disabled={!slot.available}
+                    onClick={() => setSelectedSlot(slot)}
+                    className={cn(
+                      "py-3 rounded-[16px] text-[15px] font-semibold transition-all duration-200",
+                      !slot.available
+                        ? cn("opacity-30 cursor-not-allowed", theme.surface, theme.border, "border")
+                        : isSelected
+                        ? cn(theme.primary, theme.primaryText, "shadow-md scale-105")
+                        : cn(theme.surface, theme.border, "border hover:bg-black/5 dark:hover:bg-white/5 active:scale-95")
+                    )}
+                  >
+                    {slot.time}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </Section>
       )}
 
-      {/* Botões de navegação */}
       <div className="flex gap-3 pt-4">
-        <button
-          onClick={onBack}
-          className={cn("flex-1 py-3.5 rounded-2xl font-medium text-sm transition-all duration-200 border", theme.surface, theme.border, theme.surfaceAlt, theme.textSecondary)}
-        >
-          ← Voltar
+        <button onClick={onBack} className={cn("flex-1 py-4 rounded-[20px] font-semibold text-[15px] border hover:bg-black/5 dark:hover:bg-white/5 transition-colors", theme.surface, theme.border)}>
+          Voltar
         </button>
         <button
-          onClick={onNext}
           disabled={!selectedSlot}
-          className={cn("flex-1 py-3.5 rounded-2xl font-bold text-sm transition-all duration-200 shadow-lg active:scale-[0.98] disabled:opacity-30 disabled:cursor-not-allowed", theme.primary, theme.primaryHover, theme.primaryText)}
+          onClick={onNext}
+          className={cn(
+            "flex-1 py-4 rounded-[20px] font-semibold text-[15px] transition-all shadow-sm",
+            !selectedSlot ? "opacity-50 cursor-not-allowed bg-black/10 dark:bg-white/10" : cn(theme.primary, theme.primaryText, "active:scale-[0.98]")
+          )}
         >
-          Avançar →
+          Confirmar
         </button>
       </div>
     </div>
@@ -555,93 +548,88 @@ function StepTimeSlots({
 }
 
 // ---------------------------------------------------------------------------
-// Step 3: Confirmação com nome e WhatsApp do cliente
+// Passo 3: Confirmação e Dados do Cliente
 // ---------------------------------------------------------------------------
-
 function StepConfirm({
-  shop, theme, selectedPro, selectedService, selectedDate, selectedSlot,
-  clientName, setClientName, clientPhone, setClientPhone, onSubmit, onBack,
-  submitting, submitError,
+  theme, selectedPro, selectedService, selectedDate, selectedSlot,
+  clientName, setClientName, clientPhone, setClientPhone,
+  onSubmit, submitting, submitError, onBack,
 }: {
-  shop: ShopPublicData; theme: ThemeConfig; selectedPro: Professional; selectedService: ServiceItem;
+  theme: ThemeConfig; selectedPro: Professional; selectedService: ServiceItem;
   selectedDate: string; selectedSlot: PublicSlot;
   clientName: string; setClientName: (n: string) => void;
   clientPhone: string; setClientPhone: (p: string) => void;
-  onSubmit: (e: React.FormEvent) => void; onBack: () => void;
-  submitting: boolean; submitError: string | null;
+  onSubmit: (e: React.FormEvent) => void;
+  submitting: boolean; submitError: string | null; onBack: () => void;
 }) {
-  return (
-    <div className="space-y-6 pt-6">
-      <h3 className={cn("text-sm font-medium text-center", theme.textMuted)}>Revise e confirme</h3>
+  const inputClass = cn(
+    "w-full px-5 py-4 rounded-[20px] text-[15px] font-medium border transition-all duration-200 outline-none focus:ring-2 bg-transparent",
+    theme.border, theme.borderFocus
+  );
 
-      {/* Resumo do agendamento */}
-      <div className={cn("rounded-2xl p-5 space-y-3 border", theme.surface, theme.border)}>
-        <ResumeLine label="Profissional" value={selectedPro.name} t={theme} />
-        <ResumeLine label="Serviço" value={selectedService.name} t={theme} />
-        <ResumeLine label="Dia" value={formatDate(selectedDate)} t={theme} />
-        <ResumeLine label="Hora" value={`${selectedSlot.time} — ${selectedSlot.endTime}`} t={theme} />
-        <div className={cn("pt-3 mt-3 border-t", theme.border)}>
-          <ResumeLine label="Total" value={`R$ ${selectedService.price.toFixed(2)}`} t={theme} bold />
+  return (
+    <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
+      
+      <div className={cn("p-6 rounded-[28px] border shadow-sm", theme.surface, theme.border)}>
+        <h3 className="font-semibold text-[18px] mb-4">Resumo</h3>
+        <div className="space-y-4">
+          <ResumeLine label="Serviço" value={selectedService.name} t={theme} />
+          <ResumeLine label="Profissional" value={selectedPro.name} t={theme} />
+          <ResumeLine label="Data" value={`${formatDate(selectedDate)} às ${selectedSlot.time}`} t={theme} />
+          <div className={cn("pt-4 mt-4 border-t", theme.border)}>
+            <ResumeLine label="Total" value={`R$ ${selectedService.price.toFixed(2)}`} t={theme} bold />
+          </div>
         </div>
       </div>
 
-      {/* Formulário com dados mínimos do cliente */}
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form onSubmit={onSubmit} className="space-y-6">
         <div>
-          <label className={cn("block text-xs font-medium mb-1.5 ml-1", theme.textMuted)}>
-            Nome Completo
-          </label>
+          <label className={cn("block text-[13px] font-semibold mb-2 ml-2 uppercase tracking-wide", theme.textMuted)}>Seu Nome</label>
           <input
             type="text"
             required
             value={clientName}
             onChange={(e) => setClientName(e.target.value)}
-            placeholder="Seu nome completo"
-            className={cn(
-              "w-full p-4 rounded-2xl border transition-all duration-200 text-sm",
-              theme.surface, theme.border, theme.text, theme.borderFocus,
-              "focus:outline-none focus:ring-2 focus:ring-offset-0"
-            )}
+            placeholder="Ex: João Silva"
+            className={inputClass}
           />
         </div>
+
         <div>
-          <label className={cn("block text-xs font-medium mb-1.5 ml-1", theme.textMuted)}>
-            WhatsApp
-          </label>
+          <label className={cn("block text-[13px] font-semibold mb-2 ml-2 uppercase tracking-wide", theme.textMuted)}>WhatsApp</label>
           <input
             type="tel"
             required
             value={clientPhone}
             onChange={(e) => setClientPhone(e.target.value)}
-            placeholder="(19) 99999-9999"
-            className={cn(
-              "w-full p-4 rounded-2xl border transition-all duration-200 text-sm",
-              theme.surface, theme.border, theme.text, theme.borderFocus,
-              "focus:outline-none focus:ring-2 focus:ring-offset-0"
-            )}
+            placeholder="Ex: 11999999999"
+            className={inputClass}
           />
         </div>
 
-        {/* Mensagem de erro do POST */}
         {submitError && (
-          <p className="text-sm text-red-400 text-center px-2">{submitError}</p>
+          <div className="p-4 rounded-[20px] bg-red-500/10 border border-red-500/20 text-red-500 text-[14px] font-medium text-center">
+            {submitError}
+          </div>
         )}
 
-        <div className="flex gap-3 pt-2">
+        <div className="flex gap-3 pt-4">
           <button
             type="button"
             onClick={onBack}
-            disabled={submitting}
-            className={cn("flex-1 py-3.5 rounded-2xl font-medium text-sm transition-all duration-200 border disabled:opacity-50", theme.surface, theme.border, theme.surfaceAlt, theme.textSecondary)}
+            className={cn("flex-1 py-4 rounded-[20px] font-semibold text-[15px] border hover:bg-black/5 dark:hover:bg-white/5 transition-colors", theme.surface, theme.border)}
           >
-            ← Voltar
+            Voltar
           </button>
           <button
             type="submit"
             disabled={submitting}
-            className={cn("flex-1 py-3.5 rounded-2xl font-bold text-sm transition-all duration-200 shadow-lg active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed", theme.primary, theme.primaryHover, theme.primaryText)}
+            className={cn(
+              "flex-[2] py-4 rounded-[20px] font-semibold text-[15px] transition-all shadow-sm",
+              submitting ? "opacity-50 cursor-wait" : cn(theme.primary, theme.primaryText, "active:scale-[0.98]")
+            )}
           >
-            {submitting ? "Agendando..." : "Criar Agendamento"}
+            {submitting ? "Agendando..." : "Confirmar Reserva"}
           </button>
         </div>
       </form>
@@ -650,40 +638,27 @@ function StepConfirm({
 }
 
 // ---------------------------------------------------------------------------
-// Componentes auxiliares reutilizáveis
+// Helpers visuais
 // ---------------------------------------------------------------------------
-
-function Section({
-  title, theme, children,
-}: {
-  title: string; theme: ThemeConfig; children: React.ReactNode;
-}) {
+function Section({ title, children, theme }: { title: string; children: React.ReactNode; theme: ThemeConfig }) {
   return (
     <div>
-      <h3 className={cn("text-xs font-medium mb-3 ml-1 uppercase tracking-wider", theme.textMuted)}>
-        {title}
-      </h3>
+      <h2 className={cn("text-[13px] font-semibold tracking-widest uppercase mb-4 text-center", theme.textMuted)}>{title}</h2>
       {children}
     </div>
   );
 }
 
-function ResumeLine({
-  label, value, t, bold,
-}: {
-  label: string; value: string; t: ThemeConfig; bold?: boolean;
-}) {
+function ResumeLine({ label, value, bold, t }: { label: string; value: string; bold?: boolean; t: ThemeConfig }) {
   return (
-    <div className="flex justify-between items-center">
-      <span className={cn("text-sm", t.textMuted)}>{label}</span>
-      <span className={cn("text-sm", bold ? cn("font-bold", t.accent) : t.textSecondary)}>
-        {value}
-      </span>
+    <div className="flex justify-between items-center text-[15px]">
+      <span className={t.textSecondary}>{label}</span>
+      <span className={cn(bold ? "font-bold text-[17px]" : "font-medium", t.text)}>{value}</span>
     </div>
   );
 }
 
-function formatDate(dateStr: string): string {
+function formatDate(dateStr: string) {
   if (!dateStr) return "";
   const [y, m, d] = dateStr.split("-");
   return `${d}/${m}/${y}`;

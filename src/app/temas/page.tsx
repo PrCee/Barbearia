@@ -3,14 +3,14 @@
 import { useState } from "react";
 import { THEMES, type ThemeId, type ThemeConfig, getTheme } from "@/lib/themes";
 
-const THEME_IDS: ThemeId[] = ["noir", "midnight", "bordeaux", "forest", "amber", "ocean", "slate", "mono"];
+const THEME_IDS: ThemeId[] = ["minimal", "silver", "cream", "frost", "noir", "midnight", "slate", "forest"];
 
 function cn(...c: (string | false | undefined | null)[]): string {
   return c.filter(Boolean).join(" ");
 }
 
 export default function ThemeShowcase() {
-  const [active, setActive] = useState<ThemeId>("amber");
+  const [active, setActive] = useState<ThemeId>("minimal");
   const theme = getTheme(active);
 
   return (

@@ -1,15 +1,15 @@
-// Sistema de temas white-label — premium, clean, com personalidade
-// Cada barbearia escolhe no painel admin com pré-visualização ao vivo.
+// Sistema de temas white-label Premium (Estética Apple-like)
+// Foco em minimalismo, alto contraste e respiro visual.
 
 export type ThemeId =
+  | "minimal"
+  | "silver"
+  | "cream"
+  | "frost"
   | "noir"
   | "midnight"
-  | "bordeaux"
-  | "forest"
-  | "amber"
-  | "ocean"
   | "slate"
-  | "mono";
+  | "forest";
 
 export interface ThemeConfig {
   id: ThemeId;
@@ -17,9 +17,9 @@ export interface ThemeConfig {
   label: string;
   // Cores estruturais
   bg: string;
-  bgGradient: string;       // gradiente sutil no header
+  bgGradient: string; // Para headers ou áreas de destaque hero (agora mais sutis/inexistentes)
   surface: string;
-  surfaceAlt: string;       // superfície alternativa (hover, cards secundários)
+  surfaceAlt: string;
   border: string;
   borderFocus: string;
   // Ações
@@ -31,165 +31,168 @@ export interface ThemeConfig {
   textSecondary: string;
   textMuted: string;
   // Detalhes
-  accent: string;           // badges, ícones, detalhes
+  accent: string;
   accentMuted: string;
 }
 
 export const THEMES: Record<ThemeId, ThemeConfig> = {
+  // ---- LIGHT THEMES ----
+  minimal: {
+    id: "minimal",
+    name: "Minimal",
+    label: "Branco puro, design focado e absoluto",
+    bg: "bg-white",
+    bgGradient: "from-neutral-50 to-white",
+    surface: "bg-white",
+    surfaceAlt: "hover:bg-neutral-50",
+    border: "border-neutral-200",
+    borderFocus: "focus:ring-neutral-900",
+    primary: "bg-black",
+    primaryHover: "hover:bg-neutral-800",
+    primaryText: "text-white",
+    text: "text-black",
+    textSecondary: "text-neutral-700",
+    textMuted: "text-neutral-400",
+    accent: "text-neutral-500",
+    accentMuted: "text-neutral-200",
+  },
+  silver: {
+    id: "silver",
+    name: "Silver",
+    label: "Cinza platina com detalhes em azul",
+    bg: "bg-[#f5f5f7]", // Apple's default gray background
+    bgGradient: "from-[#ebebf0] to-[#f5f5f7]",
+    surface: "bg-white",
+    surfaceAlt: "hover:bg-blue-50/50",
+    border: "border-neutral-200",
+    borderFocus: "focus:ring-blue-500",
+    primary: "bg-[#0071e3]", // Apple blue
+    primaryHover: "hover:bg-[#0077ED]",
+    primaryText: "text-white",
+    text: "text-[#1d1d1f]",
+    textSecondary: "text-[#515154]",
+    textMuted: "text-[#86868b]",
+    accent: "text-[#0071e3]",
+    accentMuted: "text-blue-100",
+  },
+  cream: {
+    id: "cream",
+    name: "Cream",
+    label: "Off-white quente e aconchegante",
+    bg: "bg-[#faf9f6]",
+    bgGradient: "from-[#f4f2ea] to-[#faf9f6]",
+    surface: "bg-white",
+    surfaceAlt: "hover:bg-amber-50/30",
+    border: "border-stone-200",
+    borderFocus: "focus:ring-stone-600",
+    primary: "bg-[#3e2723]",
+    primaryHover: "hover:bg-[#4e342e]",
+    primaryText: "text-[#fff8e1]",
+    text: "text-[#2e1d16]",
+    textSecondary: "text-[#5d4037]",
+    textMuted: "text-[#a1887f]",
+    accent: "text-[#8d6e63]",
+    accentMuted: "text-stone-200",
+  },
+  frost: {
+    id: "frost",
+    name: "Frost",
+    label: "Claro, limpo, detalhes gélidos",
+    bg: "bg-[#f8fcfd]",
+    bgGradient: "from-[#eef8fb] to-[#f8fcfd]",
+    surface: "bg-white",
+    surfaceAlt: "hover:bg-cyan-50/50",
+    border: "border-slate-200",
+    borderFocus: "focus:ring-cyan-500",
+    primary: "bg-[#082f49]",
+    primaryHover: "hover:bg-[#0c4a6e]",
+    primaryText: "text-white",
+    text: "text-[#0f172a]",
+    textSecondary: "text-[#334155]",
+    textMuted: "text-[#94a3b8]",
+    accent: "text-[#0ea5e9]",
+    accentMuted: "text-slate-200",
+  },
+
+  // ---- DARK THEMES ----
   noir: {
     id: "noir",
     name: "Noir",
-    label: "Preto absoluto, elegância máxima",
+    label: "Preto absoluto (OLED), alto contraste",
     bg: "bg-black",
-    bgGradient: "from-neutral-900 via-black to-black",
-    surface: "bg-neutral-950",
-    surfaceAlt: "hover:bg-neutral-900",
-    border: "border-neutral-800",
-    borderFocus: "focus:ring-neutral-500",
+    bgGradient: "from-neutral-900 to-black",
+    surface: "bg-[#1c1c1e]", // Apple dark mode surface
+    surfaceAlt: "hover:bg-[#2c2c2e]",
+    border: "border-[#38383a]",
+    borderFocus: "focus:ring-white",
     primary: "bg-white",
     primaryHover: "hover:bg-neutral-200",
     primaryText: "text-black",
-    text: "text-white",
-    textSecondary: "text-neutral-300",
-    textMuted: "text-neutral-500",
+    text: "text-[#f5f5f7]",
+    textSecondary: "text-[#ebebf0]",
+    textMuted: "text-[#86868b]",
     accent: "text-neutral-400",
-    accentMuted: "text-neutral-700",
+    accentMuted: "text-neutral-800",
   },
   midnight: {
     id: "midnight",
     name: "Midnight",
-    label: "Azul profundo, sofisticação noturna",
-    bg: "bg-[#0a0e1a]",
-    bgGradient: "from-[#111827] via-[#0a0e1a] to-[#0a0e1a]",
-    surface: "bg-[#111827]",
-    surfaceAlt: "hover:bg-[#1a2236]",
-    border: "border-[#1e2d4a]",
-    borderFocus: "focus:ring-indigo-400/50",
-    primary: "bg-indigo-500",
-    primaryHover: "hover:bg-indigo-400",
+    label: "Azul escuro Apple, elegância noturna",
+    bg: "bg-[#000000]",
+    bgGradient: "from-[#0a0a14] to-[#000000]",
+    surface: "bg-[#15151e]",
+    surfaceAlt: "hover:bg-[#20202e]",
+    border: "border-[#2b2b3d]",
+    borderFocus: "focus:ring-indigo-500",
+    primary: "bg-[#5e5ce6]", // iOS Indigo
+    primaryHover: "hover:bg-[#6c6ae8]",
     primaryText: "text-white",
-    text: "text-slate-100",
-    textSecondary: "text-slate-300",
-    textMuted: "text-slate-500",
+    text: "text-white",
+    textSecondary: "text-indigo-100",
+    textMuted: "text-indigo-200/50",
     accent: "text-indigo-400",
-    accentMuted: "text-indigo-400/40",
-  },
-  bordeaux: {
-    id: "bordeaux",
-    name: "Bordeaux",
-    label: "Vinho escuro, toque europeu",
-    bg: "bg-[#0d0610]",
-    bgGradient: "from-[#1a0f1e] via-[#0d0610] to-[#0d0610]",
-    surface: "bg-[#1a0f1e]",
-    surfaceAlt: "hover:bg-[#261525]",
-    border: "border-[#2d1a2b]",
-    borderFocus: "focus:ring-rose-400/40",
-    primary: "bg-rose-700",
-    primaryHover: "hover:bg-rose-600",
-    primaryText: "text-white",
-    text: "text-rose-50",
-    textSecondary: "text-rose-200/80",
-    textMuted: "text-rose-300/50",
-    accent: "text-rose-400",
-    accentMuted: "text-rose-500/40",
-  },
-  forest: {
-    id: "forest",
-    name: "Forest",
-    label: "Verde musgo, natural e acolhedor",
-    bg: "bg-[#0a0f0a]",
-    bgGradient: "from-[#111a11] via-[#0a0f0a] to-[#0a0f0a]",
-    surface: "bg-[#111a11]",
-    surfaceAlt: "hover:bg-[#1a261a]",
-    border: "border-[#1c2e1c]",
-    borderFocus: "focus:ring-emerald-500/40",
-    primary: "bg-emerald-600",
-    primaryHover: "hover:bg-emerald-500",
-    primaryText: "text-white",
-    text: "text-emerald-50",
-    textSecondary: "text-emerald-100/80",
-    textMuted: "text-emerald-200/50",
-    accent: "text-emerald-400",
-    accentMuted: "text-emerald-500/40",
-  },
-  amber: {
-    id: "amber",
-    name: "Amber",
-    label: "Âmbar quente, barbearia premium",
-    bg: "bg-[#0f0b07]",
-    bgGradient: "from-[#1a1410] via-[#0f0b07] to-[#0f0b07]",
-    surface: "bg-[#1a1410]",
-    surfaceAlt: "hover:bg-[#261d15]",
-    border: "border-[#2d2016]",
-    borderFocus: "focus:ring-amber-500/40",
-    primary: "bg-amber-600",
-    primaryHover: "hover:bg-amber-500",
-    primaryText: "text-amber-950",
-    text: "text-amber-50",
-    textSecondary: "text-amber-100/80",
-    textMuted: "text-amber-200/50",
-    accent: "text-amber-400",
-    accentMuted: "text-amber-500/40",
-  },
-  ocean: {
-    id: "ocean",
-    name: "Ocean",
-    label: "Azul oceano, calmo e moderno",
-    bg: "bg-[#07101a]",
-    bgGradient: "from-[#0d1a2a] via-[#07101a] to-[#07101a]",
-    surface: "bg-[#0d1a2a]",
-    surfaceAlt: "hover:bg-[#14273d]",
-    border: "border-[#1a3050]",
-    borderFocus: "focus:ring-cyan-400/40",
-    primary: "bg-cyan-600",
-    primaryHover: "hover:bg-cyan-500",
-    primaryText: "text-white",
-    text: "text-cyan-50",
-    textSecondary: "text-cyan-100/80",
-    textMuted: "text-cyan-200/50",
-    accent: "text-cyan-400",
-    accentMuted: "text-cyan-500/30",
+    accentMuted: "text-indigo-900/50",
   },
   slate: {
     id: "slate",
     name: "Slate",
-    label: "Cinza urbano, contemporâneo limpo",
-    bg: "bg-[#0c0d10]",
-    bgGradient: "from-[#16171d] via-[#0c0d10] to-[#0c0d10]",
-    surface: "bg-[#16171d]",
-    surfaceAlt: "hover:bg-[#20222a]",
-    border: "border-[#252730]",
-    borderFocus: "focus:ring-violet-400/40",
-    primary: "bg-violet-600",
-    primaryHover: "hover:bg-violet-500",
-    primaryText: "text-white",
-    text: "text-slate-100",
-    textSecondary: "text-slate-300",
-    textMuted: "text-slate-500",
-    accent: "text-violet-400",
-    accentMuted: "text-violet-500/40",
-  },
-  mono: {
-    id: "mono",
-    name: "Mono",
-    label: "Monocromático, minimalismo puro",
-    bg: "bg-[#0a0a0a]",
-    bgGradient: "from-[#141414] via-[#0a0a0a] to-[#0a0a0a]",
-    surface: "bg-[#141414]",
-    surfaceAlt: "hover:bg-[#1f1f1f]",
-    border: "border-[#262626]",
-    borderFocus: "focus:ring-neutral-400",
-    primary: "bg-neutral-200",
+    label: "Cinza titânio, minimalismo urbano",
+    bg: "bg-[#09090b]",
+    bgGradient: "from-[#18181b] to-[#09090b]",
+    surface: "bg-[#18181b]",
+    surfaceAlt: "hover:bg-[#27272a]",
+    border: "border-[#27272a]",
+    borderFocus: "focus:ring-zinc-500",
+    primary: "bg-zinc-100",
     primaryHover: "hover:bg-white",
-    primaryText: "text-black",
-    text: "text-neutral-100",
-    textSecondary: "text-neutral-300",
-    textMuted: "text-neutral-500",
-    accent: "text-neutral-400",
-    accentMuted: "text-neutral-700",
+    primaryText: "text-zinc-900",
+    text: "text-zinc-100",
+    textSecondary: "text-zinc-400",
+    textMuted: "text-zinc-600",
+    accent: "text-zinc-400",
+    accentMuted: "text-zinc-800",
+  },
+  forest: {
+    id: "forest",
+    name: "Forest",
+    label: "Verde pinho escuro, sereno",
+    bg: "bg-[#020604]",
+    bgGradient: "from-[#051108] to-[#020604]",
+    surface: "bg-[#06180c]",
+    surfaceAlt: "hover:bg-[#0a2312]",
+    border: "border-[#133c21]",
+    borderFocus: "focus:ring-emerald-600",
+    primary: "bg-[#10b981]",
+    primaryHover: "hover:bg-[#34d399]",
+    primaryText: "text-[#022c22]",
+    text: "text-emerald-50",
+    textSecondary: "text-emerald-200/70",
+    textMuted: "text-emerald-600",
+    accent: "text-[#10b981]",
+    accentMuted: "text-emerald-900",
   },
 };
 
 export function getTheme(id: string): ThemeConfig {
-  return THEMES[id as ThemeId] ?? THEMES.noir;
+  return THEMES[id as ThemeId] ?? THEMES.minimal;
 }

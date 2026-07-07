@@ -15,28 +15,28 @@ export default function LandingClient({
 }) {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
 
-  // Fecha o modal de agendamento (usado no botão Voltar do BookingClient)
   const closeBooking = () => setIsBookingOpen(false);
 
   return (
-    <div className={`min-h-screen ${theme.bg} ${theme.text} relative overflow-x-hidden`}>
+    <div className={`min-h-screen ${theme.bg} ${theme.text} relative overflow-x-hidden font-sans selection:bg-neutral-300/30`}>
       
-      {/* 1. HERO SECTION */}
-      <section className={`relative pt-20 pb-24 px-6 flex flex-col items-center text-center bg-gradient-to-b ${theme.bgGradient}`}>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/10 via-transparent to-transparent pointer-events-none" />
+      {/* 1. HERO SECTION (Minimalist, Apple-like) */}
+      <section className="relative pt-24 pb-20 px-6 flex flex-col items-center text-center">
+        {/* Subtle blur accent in background */}
+        <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-[80vw] h-[40vh] max-w-2xl bg-gradient-to-b ${theme.bgGradient} opacity-50 blur-[100px] pointer-events-none rounded-full`} />
         
-        <div className={`relative z-10 w-24 h-24 rounded-3xl mb-6 flex items-center justify-center text-4xl shadow-2xl shadow-black/30 border ${theme.surface} ${theme.border}`}>
+        <div className={`relative z-10 w-28 h-28 mb-8 flex items-center justify-center text-5xl rounded-[32px] shadow-sm border ${theme.surface} ${theme.border} overflow-hidden bg-white/5 backdrop-blur-xl`}>
           {shop.logoUrl ? (
-             <img src={shop.logoUrl} alt={shop.name} className="w-full h-full object-cover rounded-3xl" />
+             <img src={shop.logoUrl} alt={shop.name} className="w-full h-full object-cover" />
           ) : "💈"}
         </div>
         
-        <h1 className="relative z-10 text-3xl font-extrabold tracking-tight mb-2">
+        <h1 className="relative z-10 text-4xl md:text-5xl font-semibold tracking-tight mb-4 leading-tight">
           {shop.name}
         </h1>
         
         {shop.address && (
-          <p className={`relative z-10 text-sm mb-10 max-w-xs ${theme.textMuted}`}>
+          <p className={`relative z-10 text-[15px] font-medium mb-12 max-w-sm mx-auto ${theme.textMuted}`}>
             {shop.address}
           </p>
         )}
@@ -44,38 +44,41 @@ export default function LandingClient({
         <div className="relative z-10 w-full max-w-sm space-y-4">
           <button
             onClick={() => setIsBookingOpen(true)}
-            className={`w-full py-4 rounded-2xl font-extrabold text-base transition-all shadow-xl active:scale-[0.98] ${theme.primary} ${theme.primaryHover} ${theme.primaryText}`}
+            className={`w-full py-4 rounded-[20px] font-semibold text-[17px] transition-all duration-200 shadow-sm hover:scale-[1.02] active:scale-[0.98] ${theme.primary} ${theme.primaryText}`}
           >
-            AGENDAR HORÁRIO
+            Agendar Horário
           </button>
           
           <button
             onClick={() => {
               document.getElementById("services-section")?.scrollIntoView({ behavior: "smooth" });
             }}
-            className={`w-full py-4 rounded-2xl font-bold text-sm transition-all border ${theme.surface} ${theme.border} hover:bg-white/5`}
+            className={`w-full py-4 rounded-[20px] font-medium text-[15px] transition-all duration-200 hover:bg-black/5 dark:hover:bg-white/5 ${theme.textSecondary}`}
           >
-            Ver nossos serviços ↓
+            Ver Serviços ↓
           </button>
         </div>
       </section>
 
-      {/* CLUBE DE ASSINATURA (OPCIONAL) */}
+      {/* CLUBE DE ASSINATURA (Frosted Glass / Titanium Style) */}
       {shop.clubEnabled && (
-        <section className="px-6 -mt-8 relative z-20 max-w-md mx-auto">
-          <div className="bg-gradient-to-r from-amber-500 to-orange-600 rounded-3xl p-6 text-white shadow-xl shadow-orange-500/20 border border-orange-400/50 flex flex-col items-center text-center">
-            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-2xl mb-3 backdrop-blur-sm">
+        <section className="px-6 mb-16 relative z-20 max-w-md mx-auto">
+          <div className={`relative overflow-hidden rounded-[28px] p-8 border ${theme.border} backdrop-blur-2xl shadow-sm ${theme.surfaceAlt}`}>
+            {/* Subtle inner glow */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 pointer-events-none" />
+            
+            <div className={`w-12 h-12 rounded-[16px] flex items-center justify-center text-xl mb-5 border ${theme.border} ${theme.surface}`}>
               👑
             </div>
-            <h2 className="text-xl font-extrabold tracking-tight mb-1">Clube VIP</h2>
-            <p className="text-sm text-white/90 font-medium mb-5">
-              Cortes ilimitados por uma mensalidade fixa. Economize e ande sempre na estica.
+            <h2 className="text-2xl font-semibold tracking-tight mb-2">Clube Premium</h2>
+            <p className={`text-[15px] leading-relaxed mb-6 ${theme.textSecondary}`}>
+              Cortes ilimitados por uma mensalidade fixa. Mantenha seu visual sempre impecável.
             </p>
             <button 
               onClick={() => alert("O Clube VIP está sendo implementado! Em breve você poderá assinar diretamente pelo app.")}
-              className="w-full bg-white text-orange-600 font-bold py-3.5 rounded-xl hover:bg-orange-50 transition-colors shadow-lg active:scale-95"
+              className={`w-full py-3.5 rounded-[16px] font-semibold text-[15px] transition-all border ${theme.border} ${theme.surface} hover:bg-black/5 dark:hover:bg-white/5`}
             >
-              Assinar Clube VIP
+              Conhecer o Clube
             </button>
           </div>
         </section>
@@ -83,20 +86,20 @@ export default function LandingClient({
 
       {/* 2. PROFISSIONAIS (NOSSA EQUIPE) */}
       <section className="py-12 px-6 max-w-md mx-auto">
-        <h2 className={`text-xs font-bold tracking-widest uppercase mb-6 ${theme.textMuted}`}>Nossa Equipe</h2>
+        <h2 className={`text-[13px] font-semibold tracking-widest uppercase mb-8 text-center ${theme.textMuted}`}>A Equipe</h2>
         
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
           {shop.professionals.map((pro) => (
-            <div key={pro.id} className={`p-4 rounded-3xl border flex flex-col items-center text-center ${theme.surface} ${theme.border}`}>
-              <div className={`w-16 h-16 rounded-full mb-3 overflow-hidden flex items-center justify-center text-xl font-bold border-2 ${theme.border} ${theme.bg}`}>
+            <div key={pro.id} className="flex flex-col items-center group">
+              <div className={`w-20 h-20 rounded-full mb-4 overflow-hidden flex items-center justify-center text-2xl font-semibold border ${theme.border} ${theme.surface} transition-transform duration-300 group-hover:scale-105 shadow-sm`}>
                 {pro.image ? (
                   <img src={pro.image} alt={pro.name} className="w-full h-full object-cover" />
                 ) : (
                   pro.name[0]
                 )}
               </div>
-              <p className="text-sm font-semibold">{pro.name}</p>
-              <p className={`text-[10px] uppercase tracking-wider mt-1 ${theme.primaryText} opacity-70`}>Barbeiro</p>
+              <p className="text-[15px] font-medium">{pro.name}</p>
+              <p className={`text-[13px] mt-0.5 ${theme.textMuted}`}>Especialista</p>
             </div>
           ))}
         </div>
@@ -104,18 +107,23 @@ export default function LandingClient({
 
       {/* 3. SERVIÇOS */}
       <section id="services-section" className="py-12 px-6 max-w-md mx-auto">
-        <h2 className={`text-xs font-bold tracking-widest uppercase mb-6 ${theme.textMuted}`}>Serviços</h2>
+        <h2 className={`text-[13px] font-semibold tracking-widest uppercase mb-8 text-center ${theme.textMuted}`}>Serviços</h2>
         
-        <div className="space-y-3">
-          {shop.services.map((svc) => (
-            <div key={svc.id} className={`p-5 rounded-3xl border flex items-center justify-between ${theme.surface} ${theme.border}`}>
+        <div className={`rounded-[28px] overflow-hidden border ${theme.border} ${theme.surface}`}>
+          {shop.services.map((svc, index) => (
+            <div 
+              key={svc.id} 
+              className={`p-6 flex items-center justify-between transition-colors ${
+                index !== shop.services.length - 1 ? `border-b ${theme.border}` : ''
+              } hover:bg-black/5 dark:hover:bg-white/5`}
+            >
               <div>
-                <p className="font-bold text-sm">{svc.name}</p>
-                <p className={`text-xs mt-1 ${theme.textMuted}`}>{svc.durationMinutes} min</p>
+                <p className="font-semibold text-[16px]">{svc.name}</p>
+                <p className={`text-[14px] mt-1 ${theme.textMuted}`}>{svc.durationMinutes} min</p>
               </div>
               <div className="text-right">
-                <p className={`font-extrabold text-lg ${theme.accent}`}>
-                  <span className="text-xs font-medium opacity-70 mr-1">R$</span>
+                <p className={`font-semibold text-[17px] ${theme.text}`}>
+                  <span className={`text-[13px] mr-1 ${theme.textMuted}`}>R$</span>
                   {svc.price.toFixed(2)}
                 </p>
               </div>
@@ -126,21 +134,21 @@ export default function LandingClient({
 
       {/* 4. LOCALIZAÇÃO E CONTATO */}
       <section className="py-12 px-6 pb-32 max-w-md mx-auto">
-        <h2 className={`text-xs font-bold tracking-widest uppercase mb-6 ${theme.textMuted}`}>Localização</h2>
+        <h2 className={`text-[13px] font-semibold tracking-widest uppercase mb-8 text-center ${theme.textMuted}`}>Localização</h2>
         
-        <div className={`p-6 rounded-3xl border ${theme.surface} ${theme.border}`}>
-          <div className="text-3xl mb-4">📍</div>
-          <p className="font-semibold text-sm mb-1">Endereço</p>
-          <p className={`text-sm mb-6 ${theme.textMuted}`}>{shop.address || "Endereço não informado"}</p>
+        <div className={`p-8 rounded-[28px] border text-center ${theme.surface} ${theme.border}`}>
+          <div className={`w-12 h-12 mx-auto rounded-full flex items-center justify-center text-xl mb-5 ${theme.bg}`}>📍</div>
+          <p className="font-semibold text-[16px] mb-2">Visite a Barbearia</p>
+          <p className={`text-[15px] leading-relaxed mb-8 max-w-[250px] mx-auto ${theme.textMuted}`}>{shop.address || "Endereço não informado"}</p>
           
           {shop.address && (
              <a
                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(shop.name + " " + shop.address)}`}
                target="_blank"
                rel="noopener noreferrer"
-               className={`block w-full text-center py-3 rounded-xl text-sm font-bold border transition-colors ${theme.border} hover:bg-white/5`}
+               className={`block w-full py-4 rounded-[20px] text-[15px] font-semibold transition-all duration-200 ${theme.bg} ${theme.text} hover:scale-[1.02] active:scale-[0.98] border ${theme.border}`}
              >
-               Abrir no Google Maps ↗
+               Ver no Mapa ↗
              </a>
           )}
         </div>
@@ -150,10 +158,10 @@ export default function LandingClient({
       <AnimatePresence>
         {isBookingOpen && (
           <motion.div
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            initial={{ y: "100%", opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: "100%", opacity: 0 }}
+            transition={{ type: "spring", damping: 30, stiffness: 300, mass: 0.8 }}
             className={`fixed inset-0 z-50 overflow-y-auto ${theme.bg}`}
           >
             <BookingClient 

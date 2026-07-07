@@ -31,14 +31,14 @@ export interface UpdateShopSettingsOutput {
 // ---------------------------------------------------------------------------
 
 const VALID_THEMES: ThemeId[] = [
+  "minimal",
+  "silver",
+  "cream",
+  "frost",
   "noir",
   "midnight",
-  "bordeaux",
-  "forest",
-  "amber",
-  "ocean",
   "slate",
-  "mono",
+  "forest",
 ];
 
 // ---------------------------------------------------------------------------

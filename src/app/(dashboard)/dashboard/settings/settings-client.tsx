@@ -40,25 +40,25 @@ function ThemeSelector({
 
   // Mapeamento visual de cada tema para sua cor de preview
   const themePreviewColor: Record<ThemeId, string> = {
-    noir: "bg-neutral-900 border-neutral-700",
-    midnight: "bg-indigo-900 border-indigo-600",
-    bordeaux: "bg-rose-950 border-rose-700",
-    forest: "bg-emerald-950 border-emerald-700",
-    amber: "bg-amber-950 border-amber-700",
-    ocean: "bg-cyan-950 border-cyan-700",
-    slate: "bg-violet-950 border-violet-700",
-    mono: "bg-zinc-900 border-zinc-600",
+    minimal: "bg-white border-neutral-200",
+    silver: "bg-[#f5f5f7] border-neutral-300",
+    cream: "bg-[#faf9f6] border-stone-200",
+    frost: "bg-[#f8fcfd] border-slate-200",
+    noir: "bg-black border-[#38383a]",
+    midnight: "bg-[#000000] border-[#2b2b3d]",
+    slate: "bg-[#09090b] border-[#27272a]",
+    forest: "bg-[#020604] border-[#133c21]",
   };
 
   const dotColor: Record<ThemeId, string> = {
+    minimal: "bg-black",
+    silver: "bg-[#0071e3]",
+    cream: "bg-[#3e2723]",
+    frost: "bg-[#082f49]",
     noir: "bg-white",
-    midnight: "bg-indigo-400",
-    bordeaux: "bg-rose-400",
-    forest: "bg-emerald-400",
-    amber: "bg-amber-400",
-    ocean: "bg-cyan-400",
-    slate: "bg-violet-400",
-    mono: "bg-neutral-300",
+    midnight: "bg-[#5e5ce6]",
+    slate: "bg-zinc-100",
+    forest: "bg-[#10b981]",
   };
 
   return (
