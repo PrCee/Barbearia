@@ -132,25 +132,66 @@ export default function LandingClient({
         </div>
       </section>
 
-      {/* 4. LOCALIZAÇÃO E CONTATO */}
-      <section className="py-12 px-6 pb-32 max-w-md mx-auto">
-        <h2 className={`text-[13px] font-semibold tracking-widest uppercase mb-8 text-center ${theme.textMuted}`}>Localização</h2>
+      {/* 4. LOCALIZAÇÃO E HORÁRIOS */}
+      <section className="py-12 px-6 pb-32 max-w-4xl mx-auto">
+        <h2 className="text-2xl md:text-3xl font-semibold tracking-tight mb-10 text-center">Minha localização & Horários</h2>
         
-        <div className={`p-8 rounded-[28px] border text-center ${theme.surface} ${theme.border}`}>
-          <div className={`w-12 h-12 mx-auto rounded-full flex items-center justify-center text-xl mb-5 ${theme.bg}`}>📍</div>
-          <p className="font-semibold text-[16px] mb-2">Visite a Barbearia</p>
-          <p className={`text-[15px] leading-relaxed mb-8 max-w-[250px] mx-auto ${theme.textMuted}`}>{shop.address || "Endereço não informado"}</p>
-          
-          {shop.address && (
-             <a
-               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(shop.name + " " + shop.address)}`}
-               target="_blank"
-               rel="noopener noreferrer"
-               className={`block w-full py-4 rounded-[20px] text-[15px] font-semibold transition-all duration-200 ${theme.bg} ${theme.text} hover:scale-[1.02] active:scale-[0.98] border ${theme.border}`}
-             >
-               Ver no Mapa ↗
-             </a>
-          )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+          {/* Horário de Funcionamento */}
+          <div className={`p-8 rounded-[28px] border ${theme.surface} ${theme.border} shadow-sm`}>
+            <div className="flex items-center gap-2 mb-6">
+              <span className="text-lg">🕒</span>
+              <h3 className="font-semibold text-[15px]">Horário de Funcionamento</h3>
+            </div>
+            
+            <div className="space-y-4 text-[14px]">
+              <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                <span className={theme.textMuted}>Domingo</span>
+                <span className="italic opacity-70">Fechado</span>
+              </div>
+              <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                <span className={theme.textMuted}>Segunda-feira</span>
+                <span className="font-medium">18:30 - 21:30</span>
+              </div>
+              <div className={`flex justify-between items-center border-b border-white/5 pb-2 font-bold ${theme.primaryText}`}>
+                <span>Terça-feira</span>
+                <span>18:30 - 21:30</span>
+              </div>
+              <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                <span className={theme.textMuted}>Quarta-feira</span>
+                <span className="font-medium">18:30 - 21:30</span>
+              </div>
+              <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                <span className={theme.textMuted}>Quinta-feira</span>
+                <span className="font-medium">18:30 - 21:30</span>
+              </div>
+              <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                <span className={theme.textMuted}>Sexta-feira</span>
+                <span className="font-medium">18:30 - 21:30</span>
+              </div>
+              <div className="flex justify-between items-center pt-1">
+                <span className={theme.textMuted}>Sábado</span>
+                <span className="font-medium">10:00 - 12:00 &nbsp; 12:30 - 20:00</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Localização no Mapa */}
+          <div className="flex flex-col items-center text-center p-6">
+            <div className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl mb-4 bg-black/5 dark:bg-white/5`}>📍</div>
+            <p className={`text-[15px] leading-relaxed mb-8 max-w-sm mx-auto ${theme.textSecondary}`}>
+              {shop.address || "Av. Ataliba Leonel, 182 - Vila Cantizani, Águas de Santa Bárbara - SP - 18770-000 (Proximo ao Mercado Rodrigues)"}
+            </p>
+            
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(shop.name + " " + (shop.address || "Av. Ataliba Leonel, 182 - Vila Cantizani"))}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`inline-block px-8 py-3.5 rounded-[20px] text-[14px] font-semibold transition-all duration-200 border hover:scale-[1.02] active:scale-[0.98] ${theme.surface} ${theme.text} ${theme.border}`}
+            >
+              VER NO MAPA
+            </a>
+          </div>
         </div>
       </section>
 
