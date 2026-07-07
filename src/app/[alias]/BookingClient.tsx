@@ -28,6 +28,14 @@ interface PublicSlot {
   available: boolean;
 }
 
+// Resposta da API de criação de agendamento
+interface CreatedAppointmentResponse {
+  id: string;
+  startTime: string;
+  endTime: string;
+  cancelToken: string;
+}
+
 // ---------------------------------------------------------------------------
 // Helper: concatena classes condicionalmente (sem dependência externa)
 // ---------------------------------------------------------------------------
@@ -43,9 +51,11 @@ function cn(...classes: (string | false | undefined | null)[]): string {
 export default function BookingClient({
   shop,
   theme,
+  onClose,
 }: {
   shop: ShopPublicData;
   theme: ThemeConfig;
+  onClose?: () => void;
 }) {
   const [step, setStep] = useState(1);
   const [selectedPro, setSelectedPro] = useState<Professional | null>(null);
@@ -55,6 +65,9 @@ export default function BookingClient({
   const [clientName, setClientName] = useState("");
   const [clientPhone, setClientPhone] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [cancelToken, setCancelToken] = useState<string | null>(null);
   const [transition, setTransition] = useState(false);
 
   const today = new Date().toISOString().split("T")[0];
@@ -68,9 +81,49 @@ export default function BookingClient({
     }, 150);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Envia o agendamento para a API real e salva no banco
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (clientName && clientPhone) setSubmitted(true);
+    if (!clientName || !clientPhone || !selectedPro || !selectedService || !selectedSlot) return;
+
+    setSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      const res = await fetch("/api/public/appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          shopAlias: shop.alias,
+          barberId: selectedPro.id,
+          serviceId: selectedService.id,
+          date: selectedDate,
+          startTime: selectedSlot.time,
+          clientName,
+          clientPhone,
+        }),
+      });
+
+      const data: CreatedAppointmentResponse & { error?: string; type?: string } = await res.json();
+
+      if (!res.ok) {
+        // Se conflito de concorrência, volta para a tela de slots para o cliente escolher outro
+        if (data.type === "CONCURRENCY_CONFLICT") {
+          setSubmitError(data.error ?? "Este horário acabou de ser reservado. Escolha outro.");
+          goTo(2);
+          return;
+        }
+        setSubmitError(data.error ?? "Erro ao criar agendamento. Tente novamente.");
+        return;
+      }
+
+      setCancelToken(data.cancelToken);
+      setSubmitted(true);
+    } catch {
+      setSubmitError("Sem conexão. Verifique sua internet e tente novamente.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // ---- Tela de sucesso ----
@@ -82,9 +135,9 @@ export default function BookingClient({
             ✅
           </div>
           <h2 className="text-2xl font-bold mb-2 tracking-tight">Agendado com Sucesso</h2>
-          <p className={cn("mb-8", theme.textMuted)}>Obrigado por agendar conosco!</p>
+          <p className={cn("mb-6", theme.textMuted)}>Obrigado por agendar conosco!</p>
 
-          <div className={cn("rounded-2xl p-5 text-left space-y-3 mb-8 border", theme.surface, theme.border)}>
+          <div className={cn("rounded-2xl p-5 text-left space-y-3 mb-6 border", theme.surface, theme.border)}>
             <ResumeLine label="Profissional" value={selectedPro?.name ?? ""} t={theme} />
             <ResumeLine label="Serviço" value={selectedService?.name ?? ""} t={theme} />
             <ResumeLine label="Dia" value={formatDate(selectedDate)} t={theme} />
@@ -94,16 +147,39 @@ export default function BookingClient({
             </div>
           </div>
 
-          <button
-            onClick={() => {
-              setStep(1); setSubmitted(false); setSelectedPro(null);
-              setSelectedService(null); setSelectedDate(""); setSelectedSlot(null);
-              setClientName(""); setClientPhone("");
-            }}
-            className={cn("w-full py-3.5 rounded-xl font-medium transition-all duration-200 border", theme.surface, theme.surfaceAlt, theme.border, theme.text)}
-          >
-            Novo Agendamento
-          </button>
+          {/* Link de cancelamento — permite o cliente cancelar sem login */}
+          {cancelToken && (
+            <p className={cn("text-xs mb-6", theme.textMuted)}>
+              Precisa cancelar?{" "}
+              <a
+                href={`/cancelar/${cancelToken}`}
+                className="underline underline-offset-2 hover:opacity-80"
+              >
+                Clique aqui para cancelar este agendamento
+              </a>
+            </p>
+          )}
+
+          <div className="space-y-3">
+            <button
+              onClick={() => {
+                setStep(1); setSubmitted(false); setSelectedPro(null);
+                setSelectedService(null); setSelectedDate(""); setSelectedSlot(null);
+                setClientName(""); setClientPhone(""); setCancelToken(null);
+              }}
+              className={cn("w-full py-3.5 rounded-xl font-medium transition-all duration-200 border", theme.surface, theme.surfaceAlt, theme.border, theme.text)}
+            >
+              Novo Agendamento
+            </button>
+            {onClose && (
+               <button
+                 onClick={onClose}
+                 className={`w-full py-3.5 rounded-xl text-sm font-bold transition-all ${theme.primary} ${theme.primaryHover} ${theme.primaryText}`}
+               >
+                 Voltar para o Início
+               </button>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -111,23 +187,21 @@ export default function BookingClient({
 
   // ---- Fluxo de agendamento ----
   return (
-    <div className={cn("min-h-screen", theme.bg, theme.text)}>
-      {/* Cabeçalho com nome e endereço da barbearia */}
-      <div className={cn("relative pt-12 pb-16 bg-gradient-to-b", theme.bgGradient)}>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/5 via-transparent to-transparent" />
-        <div className="relative flex flex-col items-center px-6">
-          <div className={cn("w-16 h-16 rounded-2xl mb-4 flex items-center justify-center text-2xl shadow-lg shadow-black/20 border", theme.surface, theme.border)}>
-            💈
-          </div>
-          <h1 className="text-xl font-bold tracking-tight">{shop.name}</h1>
-          {shop.address && (
-            <p className={cn("text-sm mt-1", theme.textMuted)}>{shop.address}</p>
-          )}
+    <div className={cn("min-h-screen flex flex-col", theme.bg, theme.text)}>
+      {/* Botão de Fechar no Topo (Mobile Modal Style) */}
+      {onClose && (
+        <div className="flex justify-end p-4">
+          <button 
+            onClick={onClose}
+            className={`w-10 h-10 flex items-center justify-center rounded-full bg-black/20 hover:bg-black/40 transition-colors backdrop-blur-md border ${theme.border}`}
+          >
+            ✕
+          </button>
         </div>
-      </div>
+      )}
 
       {/* Indicador de passos */}
-      <div className="px-6 -mt-4 relative z-10">
+      <div className="px-6 pt-2">
         <div className={cn("rounded-2xl border p-1 flex gap-1", theme.surface, theme.border)}>
           {["Profissional", "Horário", "Confirmar"].map((label, i) => (
             <div
@@ -148,7 +222,7 @@ export default function BookingClient({
       </div>
 
       {/* Conteúdo do passo atual */}
-      <div className={cn("px-6 pb-12 max-w-md mx-auto transition-opacity duration-150", transition && "opacity-0")}>
+      <div className={cn("px-6 pb-24 max-w-md mx-auto transition-opacity duration-150", transition && "opacity-0")}>
         {step === 1 && (
           <StepProfessionals
             shop={shop}
@@ -168,7 +242,7 @@ export default function BookingClient({
             theme={theme}
             selectedPro={selectedPro!}
             selectedService={selectedService!}
-            shopAlias={shop.alias} // alias da URL — usado na query da API pública de slots
+            shopAlias={shop.alias}
             selectedDate={selectedDate}
             selectedSlot={selectedSlot}
             setSelectedSlot={setSelectedSlot}
@@ -190,9 +264,26 @@ export default function BookingClient({
             setClientPhone={setClientPhone}
             onSubmit={handleSubmit}
             onBack={() => goTo(2)}
+            submitting={submitting}
+            submitError={submitError}
           />
         )}
       </div>
+
+      {/* Botão flutuante de WhatsApp — contato direto com a barbearia */}
+      {shop.phone && (
+        <a
+          href={`https://wa.me/${shop.phone.replace(/\D/g, "")}?text=${encodeURIComponent("Olá! Gostaria de mais informações sobre agendamentos.")}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Falar no WhatsApp"
+          className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-green-500 hover:bg-green-600 flex items-center justify-center shadow-lg shadow-green-900/40 transition-all duration-200 hover:scale-110 active:scale-95"
+        >
+          <svg viewBox="0 0 24 24" fill="white" className="w-7 h-7">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+          </svg>
+        </a>
+      )}
     </div>
   );
 }
@@ -201,6 +292,7 @@ export default function BookingClient({
 // Step 1: Profissional + Serviço + Data
 // ---------------------------------------------------------------------------
 
+// Professional agora inclui campo opcional de imagem
 function StepProfessionals({
   shop, theme, selectedPro, setSelectedPro, selectedService, setSelectedService,
   selectedDate, setSelectedDate, today, onNext,
@@ -227,8 +319,13 @@ function StepProfessionals({
                   : cn(theme.surface, theme.border, theme.surfaceAlt)
               )}
             >
-              <div className={cn("w-14 h-14 rounded-xl mx-auto mb-2 flex items-center justify-center text-lg font-bold", theme.bg, theme.textSecondary)}>
-                {pro.name[0]}
+              {/* Foto do barbeiro — exibe imagem se disponível, inicial do nome como fallback */}
+              <div className={cn("w-14 h-14 rounded-xl mx-auto mb-2 overflow-hidden flex items-center justify-center text-lg font-bold", theme.bg, theme.textSecondary)}>
+                {pro.image ? (
+                  <img src={pro.image} alt={pro.name} className="w-full h-full object-cover" />
+                ) : (
+                  pro.name[0]
+                )}
               </div>
               <p className="text-sm font-medium">{pro.name}</p>
             </button>
@@ -464,12 +561,14 @@ function StepTimeSlots({
 function StepConfirm({
   shop, theme, selectedPro, selectedService, selectedDate, selectedSlot,
   clientName, setClientName, clientPhone, setClientPhone, onSubmit, onBack,
+  submitting, submitError,
 }: {
   shop: ShopPublicData; theme: ThemeConfig; selectedPro: Professional; selectedService: ServiceItem;
   selectedDate: string; selectedSlot: PublicSlot;
   clientName: string; setClientName: (n: string) => void;
   clientPhone: string; setClientPhone: (p: string) => void;
   onSubmit: (e: React.FormEvent) => void; onBack: () => void;
+  submitting: boolean; submitError: string | null;
 }) {
   return (
     <div className="space-y-6 pt-6">
@@ -523,19 +622,26 @@ function StepConfirm({
           />
         </div>
 
+        {/* Mensagem de erro do POST */}
+        {submitError && (
+          <p className="text-sm text-red-400 text-center px-2">{submitError}</p>
+        )}
+
         <div className="flex gap-3 pt-2">
           <button
             type="button"
             onClick={onBack}
-            className={cn("flex-1 py-3.5 rounded-2xl font-medium text-sm transition-all duration-200 border", theme.surface, theme.border, theme.surfaceAlt, theme.textSecondary)}
+            disabled={submitting}
+            className={cn("flex-1 py-3.5 rounded-2xl font-medium text-sm transition-all duration-200 border disabled:opacity-50", theme.surface, theme.border, theme.surfaceAlt, theme.textSecondary)}
           >
             ← Voltar
           </button>
           <button
             type="submit"
-            className={cn("flex-1 py-3.5 rounded-2xl font-bold text-sm transition-all duration-200 shadow-lg active:scale-[0.98]", theme.primary, theme.primaryHover, theme.primaryText)}
+            disabled={submitting}
+            className={cn("flex-1 py-3.5 rounded-2xl font-bold text-sm transition-all duration-200 shadow-lg active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed", theme.primary, theme.primaryHover, theme.primaryText)}
           >
-            Criar Agendamento
+            {submitting ? "Agendando..." : "Criar Agendamento"}
           </button>
         </div>
       </form>

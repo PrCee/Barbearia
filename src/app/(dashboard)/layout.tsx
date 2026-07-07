@@ -2,6 +2,7 @@ import { auth, signOut } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getTheme } from "@/lib/themes";
+import { getPrisma } from "@/infra/db/prisma";
 import LogoutButton from "./logout-button";
 
 export default async function DashboardLayout({
@@ -13,7 +14,14 @@ export default async function DashboardLayout({
   if (!session?.user) redirect("/login");
 
   const user = session.user as unknown as { name: string; email: string; role: string; shopId: string };
-  const t = getTheme("amber"); // será dinâmico: busca shopId → theme
+
+  // Busca o tema real da shop no banco para aplicar no layout
+  const prisma = getPrisma();
+  const shop = await prisma.shop.findUnique({
+    where: { id: user.shopId },
+    select: { theme: true },
+  });
+  const t = getTheme(shop?.theme ?? "noir");
 
   const navItems = [
     { href: "/dashboard", label: "Agenda", icon: "📅" },

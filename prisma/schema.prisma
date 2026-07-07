@@ -107,7 +107,11 @@ model Client {
 
   shop         Shop          @relation(fields: [shopId], references: [id])
   appointments Appointment[]
+
+  // Constraint para upsert por telefone — um cliente por telefone por barbearia
+  @@unique([shopId, phone])
 }
+
 
 model Appointment {
   id           String   @id @default(cuid())
@@ -122,8 +126,10 @@ model Appointment {
   observation  String?
   totalPrice   Decimal?
   reminderSent Boolean  @default(false)
+  cancelToken  String?  @unique // token UUID para cancelamento pelo cliente sem login
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
 
   shop     Shop     @relation(fields: [shopId], references: [id])
   barber   Barber   @relation(fields: [barberId], references: [id])
