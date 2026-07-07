@@ -15,6 +15,7 @@ interface ShopData {
   phone: string | null;
   theme: string;
   alias: string;
+  clubEnabled: boolean;
 }
 
 interface SettingsClientProps {
@@ -97,6 +98,7 @@ export function SettingsClient({ shop, theme: t }: SettingsClientProps) {
   const [name, setName] = useState(shop.name);
   const [address, setAddress] = useState(shop.address ?? "");
   const [phone, setPhone] = useState(shop.phone ?? "");
+  const [clubEnabled, setClubEnabled] = useState(shop.clubEnabled ?? false);
   const [selectedTheme, setSelectedTheme] = useState<ThemeId>(shop.theme as ThemeId);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -110,7 +112,7 @@ export function SettingsClient({ shop, theme: t }: SettingsClientProps) {
         const res = await fetch("/api/dashboard/shop", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, address, phone, theme: selectedTheme }),
+          body: JSON.stringify({ name, address, phone, theme: selectedTheme, clubEnabled }),
         });
 
         if (!res.ok) {
@@ -177,6 +179,31 @@ export function SettingsClient({ shop, theme: t }: SettingsClientProps) {
             placeholder="Ex: (11) 99999-9999"
             className={inputClass}
           />
+        </div>
+      </div>
+
+      {/* Clube de Assinaturas */}
+      <div className={`p-6 rounded-2xl border ${t.surface} ${t.border} space-y-4`}>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className={`text-sm font-semibold ${t.accent}`}>Clube de Assinaturas</h2>
+            <p className={`text-xs mt-1 ${t.textMuted}`}>
+              Habilita a promoção "Corte Ilimitado" para seus clientes
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setClubEnabled(!clubEnabled)}
+            className={`w-12 h-6 rounded-full transition-colors relative ${
+              clubEnabled ? t.primary : "bg-neutral-600"
+            }`}
+          >
+            <div
+              className={`absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform ${
+                clubEnabled ? "translate-x-6" : ""
+              }`}
+            />
+          </button>
         </div>
       </div>
 

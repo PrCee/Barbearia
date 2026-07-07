@@ -14,6 +14,7 @@ export interface UpdateShopSettingsInput {
   address?: string;
   phone?: string;
   theme?: string;
+  clubEnabled?: boolean;
 }
 
 export interface UpdateShopSettingsOutput {
@@ -22,6 +23,7 @@ export interface UpdateShopSettingsOutput {
   address: string | null;
   phone: string | null;
   theme: string;
+  clubEnabled: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -51,7 +53,7 @@ const VALID_THEMES: ThemeId[] = [
 export async function updateShopSettingsUseCase(
   input: UpdateShopSettingsInput
 ): Promise<AppResult<UpdateShopSettingsOutput>> {
-  const { shopId, name, address, phone, theme } = input;
+  const { shopId, name, address, phone, theme, clubEnabled } = input;
 
   // ---------------------------------------------------------------------------
   // Validação: pelo menos um campo deve ser enviado
@@ -61,7 +63,8 @@ export async function updateShopSettingsUseCase(
     name !== undefined ||
     address !== undefined ||
     phone !== undefined ||
-    theme !== undefined;
+    theme !== undefined ||
+    clubEnabled !== undefined;
 
   if (!hasAnyField) {
     return err({
@@ -97,6 +100,7 @@ export async function updateShopSettingsUseCase(
         ...(address !== undefined && { address }),
         ...(phone !== undefined && { phone }),
         ...(theme !== undefined && { theme }),
+        ...(clubEnabled !== undefined && { clubEnabled }),
       },
       select: {
         id: true,
@@ -104,6 +108,7 @@ export async function updateShopSettingsUseCase(
         address: true,
         phone: true,
         theme: true,
+        clubEnabled: true,
       },
     });
 

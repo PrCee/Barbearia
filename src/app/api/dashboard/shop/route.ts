@@ -28,6 +28,7 @@ export async function GET(request: Request) {
         phone: true,
         theme: true,
         alias: true,
+        clubEnabled: true,
       },
     });
 
@@ -72,6 +73,7 @@ export async function PATCH(request: Request) {
     address: typeof body.address === "string" ? body.address : undefined,
     phone: typeof body.phone === "string" ? body.phone : undefined,
     theme: typeof body.theme === "string" ? body.theme : undefined,
+    clubEnabled: typeof body.clubEnabled === "boolean" ? body.clubEnabled : undefined,
   });
 
   if (result.isErr()) {

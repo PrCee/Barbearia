@@ -60,6 +60,27 @@ export default function LandingClient({
         </div>
       </section>
 
+      {/* CLUBE DE ASSINATURA (OPCIONAL) */}
+      {shop.clubEnabled && (
+        <section className="px-6 -mt-8 relative z-20 max-w-md mx-auto">
+          <div className="bg-gradient-to-r from-amber-500 to-orange-600 rounded-3xl p-6 text-white shadow-xl shadow-orange-500/20 border border-orange-400/50 flex flex-col items-center text-center">
+            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-2xl mb-3 backdrop-blur-sm">
+              👑
+            </div>
+            <h2 className="text-xl font-extrabold tracking-tight mb-1">Clube VIP</h2>
+            <p className="text-sm text-white/90 font-medium mb-5">
+              Cortes ilimitados por uma mensalidade fixa. Economize e ande sempre na estica.
+            </p>
+            <button 
+              onClick={() => alert("O Clube VIP está sendo implementado! Em breve você poderá assinar diretamente pelo app.")}
+              className="w-full bg-white text-orange-600 font-bold py-3.5 rounded-xl hover:bg-orange-50 transition-colors shadow-lg active:scale-95"
+            >
+              Assinar Clube VIP
+            </button>
+          </div>
+        </section>
+      )}
+
       {/* 2. PROFISSIONAIS (NOSSA EQUIPE) */}
       <section className="py-12 px-6 max-w-md mx-auto">
         <h2 className={`text-xs font-bold tracking-widest uppercase mb-6 ${theme.textMuted}`}>Nossa Equipe</h2>

@@ -30,6 +30,7 @@ export interface ShopPublicData {
   phone: string | null;
   logoUrl: string | null;
   theme: string;
+  clubEnabled: boolean;
   professionals: Professional[];
   services: ServiceItem[];
 }
@@ -50,6 +51,7 @@ export default async function BookingPage({
       phone: true,
       logoUrl: true,
       theme: true,
+      clubEnabled: true,
       barbers: {
         where: { active: true },
         select: { id: true, name: true, image: true },
@@ -74,6 +76,7 @@ export default async function BookingPage({
     phone: shop.phone,
     logoUrl: shop.logoUrl,
     theme: shop.theme,
+    clubEnabled: shop.clubEnabled,
     professionals: shop.barbers,
     services: shop.services.map((s) => ({
       ...s,

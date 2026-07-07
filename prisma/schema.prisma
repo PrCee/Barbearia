@@ -13,9 +13,10 @@ model Shop {
   name      String
   address   String?
   phone     String?
-  logoUrl   String?
-  theme     String   @default("noir")
-  createdAt DateTime @default(now())
+  logoUrl      String?
+  theme        String   @default("noir")
+  clubEnabled  Boolean  @default(false)
+  createdAt    DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   barbers      Barber[]

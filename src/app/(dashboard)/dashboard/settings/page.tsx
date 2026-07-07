@@ -36,6 +36,7 @@ export default async function SettingsPage() {
       phone: true,
       theme: true,
       alias: true,
+      clubEnabled: true,
     },
   });
 
